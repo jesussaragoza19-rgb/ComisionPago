@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Pago Móvil - Venezuela</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-icon">📱</div>
+            <h1 class="app-title">Calculadora Pago Móvil</h1>
+            <p class="app-subtitle">Venezuela</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Amount Input Section -->
+            <section class="input-section">
+                <div class="form-group">
+                    <label for="amount-input" class="form-label">Monto de la transacción</label>
+                    <div class="amount-input-wrapper">
+                        <input 
+                            type="number" 
+                            id="amount-input" 
+                            class="form-control amount-input" 
+                            placeholder="Ingrese el monto en Bs"
+                            min="0"
+                            step="0.01"
+                        >
+                        <span class="currency-symbol">Bs.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <div class="card results-card">
+                    <div class="result-items">
+                        <div class="result-item">
+                            <span class="result-label">Monto a enviar:</span>
+                            <span class="result-value" id="original-amount">0 Bs.</span>
+                        </div>
+                        <div class="result-item commission-item">
+                            <span class="result-label">Comisión:</span>
+                            <span class="result-value commission-value" id="commission-amount">0 Bs.</span>
+                        </div>
+                        <div class="result-item total-item">
+                            <span class="result-label">Deberías tener al menos:</span>
+                            <span class="result-value total-value" id="total-amount">0 Bs.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Example Section -->
+            <section class="example-section">
+                <div class="example-card">
+                    <h4 class="example-title">Ejemplo:</h4>
+                    <p class="example-text">
+                        Para enviar 27.000 Bs. deberías tener al menos 27.081 Bs.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
