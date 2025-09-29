@@ -1,4 +1,4 @@
-// Pago Móvil Calculator JavaScript - Simplified Version
+// Pago Móvil Calculator JavaScript - Con AdMob integrado
 // Real-time commission calculator for Venezuelan mobile payments
 // Uses fixed 0.30% commission rate
 
@@ -7,10 +7,12 @@ class PagoMovilCalculator {
         // Fixed commission rate (0.30% for P2P)
         this.commissionRate = 0.003;
         this.currentAmount = 0;
+        this.calculationCount = 0; // Para controlar anuncios intersticiales
         
         this.initializeElements();
         this.bindEvents();
         this.updateResults();
+        this.initializeAds();
     }
     
     initializeElements() {
@@ -42,13 +44,19 @@ class PagoMovilCalculator {
         this.currentAmount = numericValue;
         this.updateResults();
         
+        // Incrementar contador de cálculos para anuncios intersticiales
+        if (numericValue > 0) {
+            this.calculationCount++;
+            this.checkForInterstitialAd();
+        }
+        
         // Add visual feedback
         this.addUpdateAnimation();
     }
     
     cleanNumericInput(value) {
         // Remove any non-numeric characters except decimal point
-        return value.replace(/[^\d.]/g, '');
+        return value.replace(/[^\\d.]/g, '');
     }
     
     calculateCommission(amount) {
@@ -59,139 +67,207 @@ class PagoMovilCalculator {
     formatCurrency(amount) {
         // Format number with thousands separator (dots) for Venezuelan formatting
         const rounded = Math.round(amount * 100) / 100;
-        
-        // Handle zero case
-        if (rounded === 0) {
-            return '0 Bs.';
-        }
-        
-        const parts = rounded.toString().split('.');
-        
-        // Add dots as thousands separator
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        
-        // Handle decimals - only show if not .00
-        let formatted = parts[0];
-        if (parts[1] && parts[1] !== '00') {
-            formatted += ',' + parts[1];
-        }
-        
-        return formatted + ' Bs.';
+        return rounded.toLocaleString('es-VE', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).replace(/,/g, '.') + ' Bs.';
     }
     
     updateResults() {
-        const amount = this.currentAmount;
-        const commission = this.calculateCommission(amount);
-        const total = amount + commission;
+        const commission = this.calculateCommission(this.currentAmount);
+        const total = this.currentAmount + commission;
         
         // Update display elements
-        this.originalAmountElement.textContent = this.formatCurrency(amount);
+        this.originalAmountElement.textContent = this.formatCurrency(this.currentAmount);
         this.commissionAmountElement.textContent = this.formatCurrency(commission);
         this.totalAmountElement.textContent = this.formatCurrency(total);
+        
+        // Update page title dynamically
+        if (this.currentAmount > 0) {
+            document.title = `${this.formatCurrency(total)} - Calculadora Pago Móvil`;
+        } else {
+            document.title = 'Calculadora Pago Móvil - Venezuela';
+        }
     }
     
     addUpdateAnimation() {
-        // Add visual feedback when values update
-        const resultValues = document.querySelectorAll('.result-value');
-        resultValues.forEach(element => {
-            element.classList.add('updating');
+        // Add subtle animation feedback
+        const resultsCard = document.querySelector('.results-card');
+        if (resultsCard) {
+            resultsCard.style.transform = 'scale(1.02)';
+            resultsCard.style.transition = 'transform 0.1s ease';
+            
             setTimeout(() => {
-                element.classList.remove('updating');
-            }, 300);
-        });
+                resultsCard.style.transform = 'scale(1)';
+            }, 100);
+        }
     }
     
-    // Utility method for testing with the example
-    runExample() {
-        this.amountInput.value = '27000';
-        this.currentAmount = 27000;
-        this.updateResults();
+    // FUNCIONES ADMOB CON TUS CÓDIGOS
+    initializeAds() {
+        // Inicializar AdMob cuando esté disponible
+        if (typeof adsbygoogle !== 'undefined') {
+            console.log('AdMob initialized with your account');
+        }
+        
+        // Crear contenedor para anuncio intersticial (invisible inicialmente)
+        this.createInterstitialContainer();
+    }
+    
+    createInterstitialContainer() {
+        // Crear contenedor para anuncio intersticial
+        const interstitialContainer = document.createElement('div');
+        interstitialContainer.id = 'interstitial-ad-container';
+        interstitialContainer.className = 'interstitial-container';
+        interstitialContainer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        `;
+        
+        // Botón para cerrar
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '×';
+        closeButton.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10001;
+        `;
+        closeButton.onclick = () => this.closeInterstitial();
+        
+        // Anuncio intersticial con TU CÓDIGO
+        const adElement = document.createElement('ins');
+        adElement.className = 'adsbygoogle';
+        adElement.style.cssText = 'display:block; width: 300px; height: 250px;';
+        adElement.setAttribute('data-ad-client', 'ca-app-pub-5739190558910605');
+        adElement.setAttribute('data-ad-slot', '4782503754');
+        adElement.setAttribute('data-ad-format', 'auto');
+        
+        interstitialContainer.appendChild(closeButton);
+        interstitialContainer.appendChild(adElement);
+        document.body.appendChild(interstitialContainer);
+        
+        this.interstitialContainer = interstitialContainer;
+        this.interstitialAd = adElement;
+    }
+    
+    checkForInterstitialAd() {
+        // Mostrar anuncio intersticial cada 20 cálculos
+        if (this.calculationCount % 20 === 0) {
+            this.showInterstitialAd();
+        }
+    }
+    
+    showInterstitialAd() {
+        if (this.interstitialContainer) {
+            console.log('Showing interstitial ad after', this.calculationCount, 'calculations');
+            
+            // Mostrar el contenedor
+            this.interstitialContainer.style.display = 'flex';
+            
+            // Cargar el anuncio
+            if (typeof adsbygoogle !== 'undefined' && this.interstitialAd) {
+                try {
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                } catch (e) {
+                    console.log('Error loading interstitial ad:', e);
+                }
+            }
+            
+            // Auto-cerrar después de 15 segundos
+            setTimeout(() => {
+                this.closeInterstitial();
+            }, 15000);
+        }
+    }
+    
+    closeInterstitial() {
+        if (this.interstitialContainer) {
+            this.interstitialContainer.style.display = 'none';
+        }
     }
 }
 
-// Additional utility functions for better mobile UX
-function setupMobileOptimizations() {
-    const amountInput = document.getElementById('amount-input');
-    
-    // Prevent non-numeric input
-    amountInput.addEventListener('keypress', function(e) {
-        // Allow: backspace, delete, tab, escape, enter, decimal point
-        if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
-            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-            (e.keyCode === 65 && e.ctrlKey === true) ||
-            (e.keyCode === 67 && e.ctrlKey === true) ||
-            (e.keyCode === 86 && e.ctrlKey === true) ||
-            (e.keyCode === 88 && e.ctrlKey === true) ||
-            // Allow: home, end, left, right
-            (e.keyCode >= 35 && e.keyCode <= 39)) {
-            return;
-        }
-        // Ensure that it is a number and stop the keypress
-        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-            e.preventDefault();
-        }
-    });
-    
-    // Auto-focus on amount input for better UX (but not on mobile to avoid keyboard popup)
-    setTimeout(() => {
-        if (window.innerWidth > 768) {
-            amountInput.focus();
-        }
-    }, 500);
-    
-    // Add touch feedback for mobile devices
-    if ('ontouchstart' in window) {
-        document.body.classList.add('touch-device');
-        
-        // Prevent zoom on input focus for iOS
-        const viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-            amountInput.addEventListener('focus', function() {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+// Service Worker registration para PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+                console.log('SW registration failed: ', registrationError);
             });
-            
-            amountInput.addEventListener('blur', function() {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
-            });
-        }
-    }
-    
-    // Format input with thousands separator as user types (optional enhancement)
-    amountInput.addEventListener('blur', function() {
-        if (this.value && !isNaN(this.value)) {
-            const numValue = parseFloat(this.value);
-            if (numValue > 0) {
-                // Format display value but keep actual numeric value
-                const formatted = numValue.toLocaleString('es-VE', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 2
-                });
-                // Don't change the actual input value to avoid interfering with calculations
-            }
-        }
     });
 }
 
 // Initialize calculator when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the calculator
-    const calculator = new PagoMovilCalculator();
-    
-    // Setup mobile optimizations
-    setupMobileOptimizations();
-    
-    // Make calculator globally available for debugging/testing
-    window.pagoMovilCalculator = calculator;
-    
-    // Add some helpful console logs for development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('Pago Móvil Calculator initialized');
-        console.log('Commission rate: 0.30%');
-        console.log('Try: pagoMovilCalculator.runExample() to test with 27,000 Bs.');
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    new PagoMovilCalculator();
 });
 
-// Export for potential module use
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PagoMovilCalculator;
+// Add install prompt for PWA
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+});
+
+function showInstallButton() {
+    const installButton = document.createElement('button');
+    installButton.textContent = 'Instalar App';
+    installButton.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: #1e3a8a;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+    `;
+    
+    installButton.addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                deferredPrompt = null;
+                installButton.remove();
+            });
+        }
+    });
+    
+    document.body.appendChild(installButton);
+    
+    // Ocultar botón después de 10 segundos
+    setTimeout(() => {
+        if (installButton.parentNode) {
+            installButton.remove();
+        }
+    }, 10000);
 }
